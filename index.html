@@ -112,7 +112,11 @@
       <div class="editor-footer"><span id="saveStatus" class="saved" role="status"><i></i>Saved on this device</span><button id="doneBtn" class="primary">Done</button></div>
     </aside>
   </main>
+  <div id="presentationControls" class="presentation-controls" role="group" aria-label="Presentation controls" hidden>
+    <button id="presentFlip" class="presentation-action" aria-label="Flip card" title="Flip card"><svg class="icon" aria-hidden="true"><use href="#i-flip"/></svg></button>
+    <button id="presentRecenter" class="presentation-action" aria-label="Recenter card" title="Recenter card"><svg class="icon" aria-hidden="true"><use href="#i-center"/></svg></button>
   <button id="exitPresent" class="exit-present" aria-label="Exit presentation" title="Exit presentation" hidden><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg><span class="exit-label" aria-hidden="true">Exit presentation</span></button>
+  </div>
   <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
   <dialog id="qrDialog" class="qr-dialog" aria-labelledby="qrName" aria-describedby="qrInstruction"><button class="dialog-close icon-button" id="closeQr" aria-label="Close QR code"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button><div class="qr-dialog-icon"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg></div><h2 id="qrName">Let’s connect.</h2><p id="qrInstruction">Scan with your phone’s camera.</p><div id="qrLarge" class="qr-large"></div><p id="qrDestination" class="qr-destination"></p><p id="qrEmpty" hidden>Add a link in Customize to create your QR code.</p><button id="qrCustomize" class="primary" hidden>Add a link<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button><button id="copyBtn" class="secondary"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>Copy link</button></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

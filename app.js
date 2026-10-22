@@ -6,7 +6,8 @@
   let state={...defaults,theme:document.documentElement.dataset.theme==='dark'?'dark':'light'}, db=null, saved=false, saveTimer, saveGeneration=0, toastTimer, qrUrl='', qrSVG='';
   const card=$('card'), stage=$('stage'), mobile=matchMedia('(max-width:760px)'), reduced=matchMedia('(prefers-reduced-motion:reduce)');
   let sensorOn=false, sensorWaiting=false, sensorTimer, neutral=null, latestQ=null, lastSensorAt=0, dragging=false, activePointer=null;
-  let target={x:0,y:0}, position={x:0,y:0}, velocity={x:0,y:0}, lastFrame=0, animation=0, presenting=false;
+  let target={x:0,y:0,z:0}, position={x:0,y:0,z:0}, velocity={x:0,y:0,z:0}, lastFrame=0, animation=0, presenting=false;
+  let facingHeading=180, steering=false, cardWidth=280, cardRatio=2/3, stageWidth=1, stageHeight=1;
 
   function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4200);}
   function storageStatus(ok){saved=ok;$('saveStatus').classList.toggle('unsaved',!ok);$('saveStatus').textContent=ok?'Saved on this device':'Not saved · export a backup';$('saveStatus').prepend(document.createElement('i'));}
@@ -59,7 +60,8 @@
     const ratio=state.shape==='portrait'?2/3:state.shape==='landscape'?1.586:state.front?state.imageRatio:2/3;
     const maxWidth=presenting?(ratio>1?650:400):(ratio>1?450:mobile.matches?285:325);
     const width=Math.max(1,Math.min(stage.clientHeight*.84*ratio,stage.clientWidth*.84,maxWidth));
-    card.style.width=width+'px';card.style.setProperty('--card-width',width+'px');
+    cardWidth=width;cardRatio=ratio;stageWidth=stage.clientWidth;stageHeight=stage.clientHeight;
+    card.style.width=width+'px';card.style.setProperty('--card-width',width+'px');wake();
   }
   function setEditor(open,moveFocus=false){
     const modal=open&&mobile.matches,editor=$('editor');
@@ -106,9 +108,22 @@
     if(dragging)return;const rel=multiply([neutral[0],-neutral[1],-neutral[2],-neutral[3]],latestQ),[w,x,y,z]=rel;
     const pitch=Math.atan2(2*(w*x+y*z),1-2*(x*x+y*y))*180/Math.PI,yaw=Math.asin(Math.max(-1,Math.min(1,2*(w*y-z*x))))*180/Math.PI;
     const angle=((screen.orientation&&screen.orientation.angle)||0)*Math.PI/180,gain=state.sensitivity/100;
-    target.x=clamp(-(pitch*Math.cos(angle)+yaw*Math.sin(angle))*gain,-18,18);target.y=clamp((yaw*Math.cos(angle)-pitch*Math.sin(angle))*gain,-18,18);wake();
+    const forward=-(pitch*Math.cos(angle)+yaw*Math.sin(angle)),side=yaw*Math.cos(angle)-pitch*Math.sin(angle);
+    target.x=clamp(forward*gain,-18,18);target.y=clamp(side*gain,-18,18);
+    steerCard(forward,side);wake();
   }
-  function stopSensor(message='Drag the card to preview.'){sensorOn=false;sensorWaiting=false;clearTimeout(sensorTimer);window.removeEventListener('deviceorientation',orientation);neutral=null;latestQ=null;lastSensorAt=0;$('motionBtnLabel').textContent='Enable tilt';$('motionBtn').setAttribute('aria-label','Enable phone tilt');$('motionBtn').disabled=false;$('motionBtn').setAttribute('aria-pressed','false');motionStatus(message);target={x:0,y:0};wake();}
+  function steerCard(forward,side){
+    // Dead zone preserves the original small-motion feel. Larger tilts aim the
+    // top of the artwork toward the downhill direction, including the viewer opposite.
+    const amount=clamp((Math.hypot(forward,side)-8)/30,0,1);
+    if(!amount){steering=false;target.z=0;return;}
+    let heading=180-Math.atan2(side,forward)*180/Math.PI;
+    if(heading>180)heading-=360;
+    if(steering)heading=facingHeading+((heading-facingHeading+180)%360+360)%360-180;
+    facingHeading=heading;steering=true;
+    target.z=heading*amount*amount*(3-2*amount);
+  }
+  function stopSensor(message='Drag the card to preview.'){sensorOn=false;sensorWaiting=false;clearTimeout(sensorTimer);window.removeEventListener('deviceorientation',orientation);neutral=null;latestQ=null;lastSensorAt=0;$('motionBtnLabel').textContent='Enable tilt';$('motionBtn').setAttribute('aria-label','Enable phone tilt');$('motionBtn').disabled=false;$('motionBtn').setAttribute('aria-pressed','false');motionStatus(message);target={x:0,y:0,z:0};steering=false;wake();}
   function motionNotice(message){$('motionNoticeText').textContent=message;$('motionNotice').hidden=false;}
   $('dismissMotionNotice').onclick=()=>{$('motionNotice').hidden=true;};
   $('motionBtn').onclick=async()=>{
@@ -127,27 +142,31 @@
       sensorTimer=setTimeout(()=>{if(sensorWaiting){stopSensor('No motion data received.');motionNotice('Open the HTTPS page directly in Chrome and check its Motion sensors permission. You can still drag the card.');}},3500);
     }catch(e){stopSensor();motionNotice(e.message||'Could not enable motion. Check your browser permissions and try again.');}
   };
-  $('recenterBtn').onclick=()=>{if(sensorOn&&latestQ){neutral=latestQ.slice();target={x:0,y:0};toast('Centered at your current holding angle.');}else{target={x:0,y:0};toast('Card centered.');}wake();};
-  if(screen.orientation)screen.orientation.addEventListener('change',()=>{neutral=null;target={x:0,y:0};wake();});
+  $('recenterBtn').onclick=()=>{if(sensorOn&&latestQ){neutral=latestQ.slice();target={x:0,y:0,z:0};steering=false;toast('Centered at your current holding angle.');}else{target={x:0,y:0,z:0};steering=false;toast('Card centered.');}wake();};
+  if(screen.orientation)screen.orientation.addEventListener('change',()=>{neutral=null;target={x:0,y:0,z:0};steering=false;wake();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animation);animation=0;lastFrame=0;}else{neutral=null;lastSensorAt=performance.now();wake();}});
   function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
   function pointerTarget(e){const rect=stage.getBoundingClientRect();target.y=clamp(((e.clientX-rect.left)/rect.width-.5)*38,-18,18);target.x=clamp(-((e.clientY-rect.top)/rect.height-.5)*38,-18,18);wake();}
   card.addEventListener('pointerdown',e=>{if(e.button!==0)return;dragging=true;activePointer=e.pointerId;card.setPointerCapture(e.pointerId);pointerTarget(e);});
   card.addEventListener('pointermove',e=>{if(dragging&&e.pointerId===activePointer)pointerTarget(e);});
-  function endDrag(e){if(e.pointerId!==activePointer)return;dragging=false;activePointer=null;if(!sensorOn)target={x:0,y:0};wake();}
+  function endDrag(e){if(e.pointerId!==activePointer)return;dragging=false;activePointer=null;if(!sensorOn)target={x:0,y:0,z:0};steering=false;wake();}
   card.addEventListener('pointerup',endDrag);card.addEventListener('pointercancel',endDrag);
   stage.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&!dragging&&!sensorOn&&!reduced.matches)pointerTarget(e);});
-  stage.addEventListener('pointerleave',()=>{if(!sensorOn&&!dragging){target={x:0,y:0};wake();}});
+  stage.addEventListener('pointerleave',()=>{if(!sensorOn&&!dragging){target={x:0,y:0,z:0};steering=false;wake();}});
   function wake(){if(!animation&&!document.hidden)animation=requestAnimationFrame(frame);}
   function frame(now){animation=0;const dt=Math.min((now-(lastFrame||now-16))/1000,1/30);lastFrame=now;
-    if(sensorOn&&!sensorWaiting&&lastSensorAt&&now-lastSensorAt>3500){motionStatus('Waiting for motion data…');target={x:0,y:0};}else if(sensorOn&&!sensorWaiting)motionStatus('Phone tilt is on.',true);
-    let moving=false;for(const axis of ['x','y']){const force=(target[axis]-position[axis])*150-velocity[axis]*23;velocity[axis]+=force*dt;position[axis]+=velocity[axis]*dt;if(Math.abs(target[axis]-position[axis])>.005||Math.abs(velocity[axis])>.01)moving=true;else{position[axis]=target[axis];velocity[axis]=0;}}
+    if(sensorOn&&!sensorWaiting&&lastSensorAt&&now-lastSensorAt>3500){motionStatus('Waiting for motion data…');target={x:0,y:0,z:0};steering=false;}else if(sensorOn&&!sensorWaiting)motionStatus('Phone tilt is on.',true);
+    let moving=false;for(const axis of ['x','y','z']){const force=(target[axis]-position[axis])*150-velocity[axis]*23;velocity[axis]+=force*dt;position[axis]+=velocity[axis]*dt;if(Math.abs(target[axis]-position[axis])>.005||Math.abs(velocity[axis])>.01)moving=true;else{position[axis]=target[axis];velocity[axis]=0;}}
+    const turn=position.z*Math.PI/180,c=Math.abs(Math.cos(turn)),s=Math.abs(Math.sin(turn)),height=cardWidth/cardRatio;
+    const scale=Math.min(1,stageWidth*.9/(cardWidth*c+height*s),stageHeight*.9/(cardWidth*s+height*c));
+    card.style.setProperty('--turn-scale',String(Math.max(.01,scale)));card.style.setProperty('--rz',position.z.toFixed(3)+'deg');
     card.style.setProperty('--rx',position.x.toFixed(3)+'deg');card.style.setProperty('--ry',position.y.toFixed(3)+'deg');card.style.setProperty('--lx',(50+position.y*2.1).toFixed(2)+'%');card.style.setProperty('--ly',(30-position.x*2.2).toFixed(2)+'%');$('floorShadow').style.transform=`translate(${position.y*.9}px,${Math.abs(position.x)*.15}px) scale(${1+Math.abs(position.y)/130})`;
     if(moving||sensorOn)wake();else lastFrame=0;
   }
   let ownsFullscreen=false,fullscreenPending=false,presentationRun=0,exitTimer=null,presentationOrigin=$('presentBtn');
   function presentationView(on){
     presenting=on;document.body.classList.toggle('presenting',on);
+    $('presentationControls').hidden=!on;
     const exit=$('exitPresent');exit.hidden=!on;exit.disabled=false;exit.classList.remove('exiting');
     clearTimeout(exitTimer);exitTimer=null;
     if(on){setEditor(false);clearTimeout(toastTimer);$('toast').classList.remove('visible');}
@@ -185,6 +204,8 @@
       // The controls-hidden view is the fallback; no additional app popup is needed.
     }finally{fullscreenPending=false;requestAnimationFrame(fitCard);}
   }
+  $('presentFlip').onclick=()=>$('flipBtn').click();
+  $('presentRecenter').onclick=()=>$('recenterBtn').click();
   $('presentBtn').onclick=()=>presentation(true);
   $('previewBtn').onclick=()=>presentation(true,{origin:$('previewBtn')});
   $('exitPresent').onclick=()=>{

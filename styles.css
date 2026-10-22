@@ -129,7 +129,7 @@ button:disabled, input:disabled { opacity: .42; cursor: default; }
 .card-stage { position: relative; display: flex; justify-content: center; align-items: center; flex: 1 1 auto; min-height: 290px; max-height: 580px; width: 100%; margin: 12px 0 24px; perspective: 1400px; isolation: isolate; touch-action: pan-y; }
 .ambient { pointer-events: none; position: absolute; inset: 0; background: radial-gradient(ellipse at center, #d7d6d333, transparent 65%); }
 .floor-shadow { position: absolute; bottom: 1%; width: 190px; max-width: 60%; height: 18px; background: #272625; border-radius: 50%; opacity: .15; filter: blur(17px); pointer-events: none; }
-.card { --rx: 0deg; --ry: 0deg; --lx: 50%; --ly: 30%; --card-width: 280px; width: 280px; aspect-ratio: 2/3; position: relative; flex-shrink: 0; transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; will-change: transform; cursor: grab; touch-action: none; color: #fff; }
+.card { --rx: 0deg; --ry: 0deg; --lx: 50%; --ly: 30%; --card-width: 280px; width: 280px; aspect-ratio: 2/3; position: relative; flex-shrink: 0; transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz, 0deg)) scale(var(--turn-scale, 1)); transform-style: preserve-3d; will-change: transform; cursor: grab; touch-action: none; color: #fff; }
 .card:active { cursor: grabbing; }
 .card-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .65s cubic-bezier(.22,.7,.2,1); }
 .card.flipped .card-inner { transform: rotateY(180deg); }
@@ -253,7 +253,7 @@ input[type=range] { display: block; width: 100%; margin: 9px 0 0; height: 28px; 
 .presenting .viewer { height: 100svh; min-height: 0; padding: max(24px, env(safe-area-inset-top)) 24px max(84px, calc(68px + env(safe-area-inset-bottom))); }
 .presenting .card-stage { height: 100%; min-height: 0; max-height: none; margin: 0; flex: 1; }
 /* Shared frosted surfaces have an opaque-enough fallback when blur is unavailable. */
-.glass-pill, .exit-present {
+.glass-pill, .exit-present, .presentation-action {
   color: var(--label);
   background: var(--glass);
   border: 1px solid var(--glass-border);
@@ -270,9 +270,19 @@ input[type=range] { display: block; width: 100%; margin: 9px 0 0; height: 28px; 
 }
 .motion-controls .glass-pill .icon { width: 14px; height: 14px; }
 .motion-controls .glass-pill[aria-pressed=true] { color: var(--accent); border-color: var(--accent); }
-.exit-present {
+.presentation-controls {
   position: fixed; z-index: 30; left: 50%; bottom: max(22px, env(safe-area-inset-bottom));
-  transform: translateX(-50%); display: flex; align-items: center; justify-content: flex-start;
+  transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+}
+.presentation-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; min-height: 48px; flex-shrink: 0; padding: 0; border-radius: 50%;
+  transition: background .16s, scale .15s;
+}
+.presentation-action .icon { width: 18px; height: 18px; }
+.presentation-action:active { scale: .94; }
+.exit-present {
+  display: flex; align-items: center; justify-content: flex-start;
   width: 48px; height: 48px; min-height: 48px; padding: 0 14px; gap: 0; overflow: hidden;
   border-radius: 999px; white-space: nowrap; font-size: 13px; font-weight: 500; line-height: 1.3;
   transition: width .28s cubic-bezier(.2,.75,.2,1), background .16s, scale .15s;
@@ -385,7 +395,7 @@ input[type=range] { display: block; width: 100%; margin: 9px 0 0; height: 28px; 
 :root[data-theme="dark"] .floor-shadow { opacity: .45; background: #000; }
 .presenting .viewer { height: 100svh; height: 100dvh; }
 @media (hover: hover) {
-  .glass-pill:hover, .exit-present:hover { background: var(--hover); color: var(--text); }
+  .glass-pill:hover, .exit-present:hover, .presentation-action:hover { background: var(--hover); color: var(--text); }
 }
 @media (max-width: 420px) {
   /* Reserve space for the theme toggle without shrinking the existing touch targets. */
@@ -397,5 +407,5 @@ input[type=range] { display: block; width: 100%; margin: 9px 0 0; height: 28px; 
 }
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { transition: none !important; animation: none !important; }
-  :where(.primary, .secondary, .toolbar-button, .text-button, .motion-button, .icon-button, .finish, .upload-zone):active, .exit-present:active { scale: 1; }
+  :where(.primary, .secondary, .toolbar-button, .text-button, .motion-button, .icon-button, .finish, .upload-zone):active, .exit-present:active, .presentation-action:active { scale: 1; }
 }
