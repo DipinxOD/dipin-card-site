@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <script>
+    // Restore the last appearance before styles paint. The app also saves it in its setup.
+    (() => {
+      let theme = 'light';
+      try { if (localStorage.getItem('prism-theme') === 'dark') theme = 'dark'; } catch {}
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'dark' ? '#111113' : '#f5f5f7');
+    })();
+  </script>
+  <meta name="description" content="Your personal, motion-responsive business card.">
+  <title>Prism · Your card</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./vendor/qrcode.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.8 13.3A8.9 8.9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h4m-4 4h8"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-flip" viewBox="0 0 24 24"><path d="M7 7h10a4 4 0 0 1 4 4v1M17 17H7a4 4 0 0 1-4-4v-1M7 3 3 7l4 4m10 2 4 4-4 4"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M15 15h2v2h4m-6 4h2m4 0v-2"/></symbol>
+    <symbol id="i-preview" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-tilt" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2" transform="rotate(15 12 12)"/><path d="M2 9V5h3m17 10v4h-3"/></symbol>
+    <symbol id="i-center" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  </svg>
+  <header class="topbar" id="appHeader">
+    <a class="brand" href="./" aria-label="Prism home"><span class="brand-mark"><svg class="icon"><use href="#i-card"/></svg></span>Prism</a>
+    <div class="header-actions">
+      <button id="themeBtn" class="toolbar-button theme-toggle" aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false"><svg class="icon" aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg></button>
+      <button id="presentBtn" class="toolbar-button" title="Present your card in fullscreen" aria-label="Present your card in fullscreen"><svg class="icon" aria-hidden="true"><use href="#i-expand"/></svg><span>Present</span></button>
+      <button id="editBtn" class="toolbar-button edit-button" aria-controls="editor" aria-expanded="true"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg><span>Customize</span></button>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="viewer" id="viewer" aria-label="Your interactive card">
+      <div class="viewer-caption">
+        <h1 id="displayTitle">Your card.</h1>
+        <p id="captionText">Ready for your next introduction.</p>
+      </div>
+      <div class="card-stage" id="stage">
+        <div class="ambient"></div><div class="floor-shadow" id="floorShadow"></div>
+        <div id="card" class="card" tabindex="0" role="button" aria-label="Front of business card. Press Enter to flip.">
+          <div class="card-inner" id="cardInner">
+            <div class="card-face front" id="frontFace" aria-hidden="false">
+              <div class="demo-art" id="demoArt"><img src="./solar.svg" alt="" draggable="false"></div>
+              <img id="frontImage" class="uploaded-art" alt="Your card artwork" hidden draggable="false">
+              <div id="frontCopy" class="front-copy">
+                <div class="card-topline"><span id="cardLabel">Your name</span><svg class="icon" aria-hidden="true"><use href="#i-card"/></svg></div>
+                <div class="card-bottom"><span class="card-kicker" id="cardRole">Let’s connect</span><h2>Make a<br><span>connection.</span></h2><div class="card-rule"></div><div class="card-foot"><span>Your next introduction.</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></div></div>
+              </div>
+              <div class="foil"></div><div class="glare"></div><div class="edge-light"></div>
+            </div>
+            <div class="card-face back" id="backFace" aria-hidden="true">
+              <img id="backImage" class="uploaded-art" alt="Your reverse artwork" hidden draggable="false">
+              <div class="back-copy" id="backCopy"><span class="back-eyebrow">Nice to meet you.</span><h2 id="backName">Your name</h2><p id="backRole">Let’s stay in touch.</p><div class="mini-qr" id="miniQr"></div><p class="back-hint" id="backHint">Add your link in Customize<br>to create your QR code.</p><span class="back-footer">Scan to connect</span></div>
+              <div class="foil"></div><div class="glare"></div><div class="edge-light"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="viewer-controls">
+        <div class="card-actions"><button id="flipBtn" class="secondary"><svg class="icon" aria-hidden="true"><use href="#i-flip"/></svg><span id="flipBtnLabel">Flip card</span></button><button id="scanBtn" class="primary"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg>Show QR</button></div>
+        <div class="motion-controls" role="group" aria-label="Card preview controls">
+          <button id="motionBtn" class="motion-button glass-pill" aria-label="Enable phone tilt" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-tilt"/></svg><span id="motionBtnLabel">Enable tilt</span></button>
+          <button id="previewBtn" class="text-button glass-pill" title="Preview your card in fullscreen" aria-label="Preview your card in fullscreen"><svg class="icon" aria-hidden="true"><use href="#i-preview"/></svg><span>Preview</span></button>
+          <button id="recenterBtn" class="text-button glass-pill"><svg class="icon" aria-hidden="true"><use href="#i-center"/></svg><span>Recenter</span></button>
+        </div>
+        <div class="motion-status" id="motionStatus" role="status"><i></i><span id="motionText">Drag the card to preview.</span></div>
+        <div id="motionNotice" class="motion-notice" hidden><p id="motionNoticeText"></p><button id="dismissMotionNotice" class="icon-button" aria-label="Dismiss motion notice"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      </div>
+    </section>
+    <aside class="editor" id="editor" aria-labelledby="editorTitle">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="editor-heading"><div><h2 id="editorTitle">Customize</h2><p>A card that feels like you.</p></div><button id="closeEditor" class="icon-button" aria-label="Close customization"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      <div class="editor-scroll">
+        <section class="control-section" aria-labelledby="artworkTitle"><h3 id="artworkTitle">Artwork</h3>
+          <label class="upload-zone" tabindex="0" role="button" id="uploadZone" for="frontUpload"><span class="upload-icon"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg></span><strong id="uploadTitle">Choose front image</strong><span>PNG, JPG or WebP, up to 20 MB</span><span class="upload-note">Drag and drop, or browse files.</span></label><input id="frontUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <div class="artwork-tools"><label class="text-button file-label" tabindex="0" role="button" id="backUploadLabel" for="backUpload">Add back image</label><input id="backUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden><button class="text-button" id="removeBackBtn" hidden>Remove back</button><button class="text-button muted-button" id="demoBtn">Use demo</button></div>
+          <div class="field-row"><label>Shape<select id="shape"><option value="auto">Match image</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Image fit<select id="fit"><option value="contain">Show all</option><option value="cover">Fill card</option></select></label></div>
+          <label class="toggle-row"><span>Show name on image</span><input type="checkbox" id="overlay"><span class="switch" aria-hidden="true"></span></label>
+          <p class="field-help" id="overlayHint">Upload a front image to add a name overlay.</p>
+        </section>
+        <section class="control-section" aria-labelledby="detailsTitle"><h3 id="detailsTitle">Details</h3>
+          <label class="field">Name<input id="name" maxlength="50" placeholder="Your name" autocomplete="name"></label>
+          <label class="field">Title or introduction<input id="role" maxlength="80" placeholder="What would you like to share?"></label>
+          <label class="field">QR link<input id="url" type="url" maxlength="1000" placeholder="https://example.com" inputmode="url" autocomplete="url" spellcheck="false" autocapitalize="off" aria-describedby="urlHelp urlError"></label><p class="field-help" id="urlHelp">Link to your website, contact page or social profile.</p><p id="urlError" class="field-error" hidden></p>
+        </section>
+        <section class="control-section" aria-labelledby="appearanceTitle"><h3 id="appearanceTitle">Appearance</h3>
+          <div class="finish-options" role="group" aria-label="Card finish"><button data-finish="gloss" class="finish active" aria-pressed="true"><span class="finish-swatch gloss-swatch"></span>Gloss</button><button data-finish="holo" class="finish" aria-pressed="false"><span class="finish-swatch holo-swatch"></span>Holographic</button><button data-finish="matte" class="finish" aria-pressed="false"><span class="finish-swatch matte-swatch"></span>Matte</button></div>
+          <label class="range-field" id="shineControl"><span>Shine <output id="shineValue" for="shine">55%</output></span><input id="shine" type="range" min="0" max="100" value="55"></label>
+          <label class="range-field"><span>Tilt sensitivity <output id="sensitivityValue" for="sensitivity">Balanced</output></span><input id="sensitivity" type="range" min="25" max="150" value="80"></label>
+          <p class="field-help">Hold your phone comfortably when enabling tilt. Recenter adjusts the neutral angle.</p>
+        </section>
+        <section class="control-section backup-section" aria-labelledby="backupTitle"><h3 id="backupTitle">Backup</h3><p class="field-help">Your setup stays in this browser. Export a copy to keep it or move it to another device.</p><div class="backup-actions"><button id="exportBtn" class="secondary"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Export setup</button><label for="importFile" class="text-button file-label" tabindex="0" role="button">Import backup</label><input id="importFile" type="file" accept="application/json,.json" hidden></div></section>
+      </div>
+      <div class="editor-footer"><span id="saveStatus" class="saved" role="status"><i></i>Saved on this device</span><button id="doneBtn" class="primary">Done</button></div>
+    </aside>
+  </main>
+  <button id="exitPresent" class="exit-present" aria-label="Exit presentation" title="Exit presentation" hidden><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg><span class="exit-label" aria-hidden="true">Exit presentation</span></button>
+  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+  <dialog id="qrDialog" class="qr-dialog" aria-labelledby="qrName" aria-describedby="qrInstruction"><button class="dialog-close icon-button" id="closeQr" aria-label="Close QR code"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button><div class="qr-dialog-icon"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg></div><h2 id="qrName">Let’s connect.</h2><p id="qrInstruction">Scan with your phone’s camera.</p><div id="qrLarge" class="qr-large"></div><p id="qrDestination" class="qr-destination"></p><p id="qrEmpty" hidden>Add a link in Customize to create your QR code.</p><button id="qrCustomize" class="primary" hidden>Add a link<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button><button id="copyBtn" class="secondary"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>Copy link</button></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
