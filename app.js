@@ -7,7 +7,7 @@
   const card=$('card'), stage=$('stage'), mobile=matchMedia('(max-width:760px)'), reduced=matchMedia('(prefers-reduced-motion:reduce)');
   let sensorOn=false, sensorWaiting=false, sensorTimer, neutral=null, latestQ=null, lastSensorAt=0, dragging=false, activePointer=null;
   let target={x:0,y:0,z:0}, position={x:0,y:0,z:0}, velocity={x:0,y:0,z:0}, lastFrame=0, animation=0, presenting=false;
-  let facingHeading=180, steering=false, cardWidth=280, cardRatio=2/3, stageWidth=1, stageHeight=1;
+  let steering=false, cardWidth=280, cardRatio=2/3, stageWidth=1, stageHeight=1;
 
   function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4200);}
   function storageStatus(ok){saved=ok;$('saveStatus').classList.toggle('unsaved',!ok);$('saveStatus').textContent=ok?'Saved on this device':'Not saved · export a backup';$('saveStatus').prepend(document.createElement('i'));}
@@ -110,18 +110,13 @@
     const angle=((screen.orientation&&screen.orientation.angle)||0)*Math.PI/180,gain=state.sensitivity/100;
     const forward=-(pitch*Math.cos(angle)+yaw*Math.sin(angle)),side=yaw*Math.cos(angle)-pitch*Math.sin(angle);
     target.x=clamp(forward*gain,-18,18);target.y=clamp(side*gain,-18,18);
-    steerCard(forward,-side);wake();
+    steerCard(forward);wake();
   }
-  function steerCard(forward,side){
-    // Dead zone preserves the original small-motion feel. Larger tilts aim the
-    // top of the artwork toward the downhill direction, including the viewer opposite.
-    const amount=clamp((Math.hypot(forward,side)-8)/30,0,1);
-    if(!amount){steering=false;target.z=0;return;}
-    let heading=180-Math.atan2(side,forward)*180/Math.PI;
-    if(heading>180)heading-=360;
-    if(steering)heading=facingHeading+((heading-facingHeading+180)%360+360)%360-180;
-    facingHeading=heading;steering=true;
-    target.z=heading*amount*amount*(3-2*amount);
+  function steerCard(forward){
+    // Two reading orientations. Separate turn/return thresholds prevent chatter.
+    if(!steering&&forward>=38)steering=true;
+    else if(steering&&forward<=8)steering=false;
+    target.z=steering?180:0;
   }
   function stopSensor(message='Drag the card to preview.'){sensorOn=false;sensorWaiting=false;clearTimeout(sensorTimer);window.removeEventListener('deviceorientation',orientation);neutral=null;latestQ=null;lastSensorAt=0;$('motionBtnLabel').textContent='Enable tilt';$('motionBtn').setAttribute('aria-label','Enable phone tilt');$('motionBtn').disabled=false;$('motionBtn').setAttribute('aria-pressed','false');motionStatus(message);target={x:0,y:0,z:0};steering=false;wake();}
   function motionNotice(message){$('motionNoticeText').textContent=message;$('motionNotice').hidden=false;}
