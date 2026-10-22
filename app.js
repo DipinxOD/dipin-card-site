@@ -110,7 +110,7 @@
     const angle=((screen.orientation&&screen.orientation.angle)||0)*Math.PI/180,gain=state.sensitivity/100;
     const forward=-(pitch*Math.cos(angle)+yaw*Math.sin(angle)),side=yaw*Math.cos(angle)-pitch*Math.sin(angle);
     target.x=clamp(forward*gain,-18,18);target.y=clamp(side*gain,-18,18);
-    steerCard(forward,side);wake();
+    steerCard(forward,-side);wake();
   }
   function steerCard(forward,side){
     // Dead zone preserves the original small-motion feel. Larger tilts aim the
