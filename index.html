@@ -68,8 +68,9 @@
             </div>
             <div class="card-face back" id="backFace" aria-hidden="true">
               <img id="backImage" class="uploaded-art" alt="Your reverse artwork" hidden draggable="false">
-              <div class="back-copy" id="backCopy"><span class="back-eyebrow">Nice to meet you.</span><h2 id="backName">Your name</h2><p id="backRole">Let’s stay in touch.</p><div class="mini-qr" id="miniQr"></div><p class="back-hint" id="backHint">Add your link in Customize<br>to create your QR code.</p><span class="back-footer">Scan to connect</span></div>
+              <div class="back-copy" id="backCopy"><div class="back-heading"><span class="back-eyebrow">Nice to meet you.</span><h2 id="backName">Your name</h2><p id="backRole">Let’s stay in touch.</p></div><div class="back-details"><p class="back-hint" id="backHint">Add your link in Customize to create your QR code.</p><span class="back-footer">Scan to connect</span></div></div>
               <div class="foil"></div><div class="glare"></div><div class="edge-light"></div>
+              <div class="back-qr-layer"><div class="mini-qr" id="miniQr" hidden></div><p id="backQrEmpty" class="back-qr-empty">Add a website link in Customize to show your QR code.</p></div>
             </div>
           </div>
         </div>
@@ -91,7 +92,8 @@
       <div class="editor-scroll">
         <section class="control-section" aria-labelledby="artworkTitle"><h3 id="artworkTitle">Artwork</h3>
           <label class="upload-zone" tabindex="0" role="button" id="uploadZone" for="frontUpload"><span class="upload-icon"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg></span><strong id="uploadTitle">Choose front image</strong><span>PNG, JPG or WebP, up to 20 MB</span><span class="upload-note">Drag and drop, or browse files.</span></label><input id="frontUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-          <div class="artwork-tools"><label class="text-button file-label" tabindex="0" role="button" id="backUploadLabel" for="backUpload">Add back image</label><input id="backUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden><button class="text-button" id="removeBackBtn" hidden>Remove back</button><button class="text-button muted-button" id="demoBtn">Use demo</button></div>
+          <div class="artwork-tools"><label class="text-button file-label" tabindex="0" role="button" id="backUploadLabel" for="backUpload">Add back background</label><input id="backUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden><button class="text-button" id="removeBackBtn" hidden>Remove back background</button><button class="text-button muted-button" id="demoBtn">Use demo</button></div>
+          <p class="field-help">Your QR code stays centered over the back background.</p>
           <div class="field-row"><label>Shape<select id="shape"><option value="auto">Match image</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Image fit<select id="fit"><option value="contain">Show all</option><option value="cover">Fill card</option></select></label></div>
           <label class="toggle-row"><span>Show name on image</span><input type="checkbox" id="overlay"><span class="switch" aria-hidden="true"></span></label>
           <p class="field-help" id="overlayHint">Upload a front image to add a name overlay.</p>

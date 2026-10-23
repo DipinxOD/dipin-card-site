@@ -155,20 +155,24 @@ button:disabled, input:disabled { opacity: .42; cursor: default; }
 .foil { display: none; background: repeating-linear-gradient(115deg, #f7a6cd55 0%, #fbdc9055 16%, #8fe5dd55 33%, #b6a7ff55 50%); background-size: 240% 240%; background-position: var(--lx) var(--ly); mix-blend-mode: color-dodge; opacity: calc(var(--shine) * .7); }
 .card.holo .foil { display: block; }
 .card.matte .glare, .card.matte .edge-light { opacity: .05; }
-.back-copy { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: calc(var(--card-width) * .09); gap: 6px; }
+.back-copy { position: absolute; inset: 0; text-align: center; pointer-events: none; }
+.back-heading, .back-details { position: absolute; left: 8%; right: 8%; height: calc((100% - var(--back-qr-size, 155px)) / 2 - 14px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; overflow: hidden; }
+.back-heading { top: 7px; }
+.back-details { bottom: 7px; }
 .back-eyebrow { color: #b7bac2; font-size: 10px; }
-.back-copy h2 { font-size: clamp(18px, calc(var(--card-width) * .085), 28px); font-weight: 600; letter-spacing: -.6px; line-height: 1.2; margin: 8px 0 0; max-width: 100%; overflow-wrap: anywhere; }
-.back-copy > p { margin: 0; font-size: clamp(10px, calc(var(--card-width) * .039), 14px); color: #c5c7cf; line-height: 1.4; max-width: 100%; overflow-wrap: anywhere; }
-.mini-qr { flex: 0 1 auto; width: 155px; min-height: 0; max-width: 70%; margin: auto 0; aspect-ratio: 1; background: #fff; border-radius: 10px; overflow: hidden; }
+.back-copy h2 { font-size: clamp(18px, calc(var(--card-width) * .085), 28px); font-weight: 600; letter-spacing: -.6px; line-height: 1.2; margin: 0; max-width: 100%; overflow-wrap: anywhere; }
+.back-heading p { margin: 0; font-size: clamp(10px, calc(var(--card-width) * .039), 14px); color: #c5c7cf; line-height: 1.4; max-width: 100%; overflow-wrap: anywhere; }
+.back-qr-layer { position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); width: var(--back-qr-size, 155px); height: var(--back-qr-size, 155px); pointer-events: none; }
+.mini-qr { width: 100%; height: 100%; padding: 6px; margin: 0; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px #0002; overflow: hidden; }
 .mini-qr:empty { display: none; }
 .mini-qr svg { width: 100%; height: 100%; display: block; }
-.back-copy .back-hint { font-size: 10px; line-height: 1.4; color: #a7abb5; margin-top: auto; }
+.back-qr-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; margin: 0; padding: 14px; border-radius: 12px; background: #fff; color: #55565b; font-size: clamp(10px, calc(var(--card-width) * .035), 13px); line-height: 1.5; text-align: center; }
+.back-copy .back-hint { font-size: 10px; line-height: 1.4; color: #a7abb5; margin: 0; }
 .back-footer { font-size: 10px; color: #a7abb5; }
-.card.landscape .back-copy { display: grid; grid-template-columns: minmax(0, 1fr) 34%; grid-template-rows: auto auto 1fr auto; text-align: left; align-content: center; align-items: start; column-gap: 16px; padding: 7%; }
-.card.landscape .back-copy h2 { font-size: clamp(18px, calc(var(--card-width) * .065), 28px); margin-top: 0; }
-.card.landscape .back-copy > p { font-size: 12px; }
-.card.landscape .mini-qr { grid-column: 2; grid-row: 1 / 5; max-width: 100%; width: 100%; align-self: center; margin: 0; }
-.card.landscape .back-footer { display: none; }
+.card.landscape .back-heading, .card.landscape .back-details { gap: 2px; }
+.card.landscape .back-eyebrow, .card.landscape .back-footer { display: none; }
+.card.landscape .back-copy h2 { font-size: clamp(14px, calc(var(--card-width) * .045), 22px); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card.landscape .back-heading p { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card.landscape .card-kicker { font-size: 11px; }
 .card.landscape .front-copy { padding: 6%; }
 .card.landscape .card-bottom h2 { font-size: calc(var(--card-width) * .092); margin: 8px 0 14px; }

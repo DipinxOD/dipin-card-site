@@ -20,7 +20,7 @@
     if(qrUrl){try{const qr=qrcode(0,'M');qr.addData(qrUrl,'Byte');qr.make();const n=qr.getModuleCount(),size=n+8;let path='';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(qr.isDark(y,x))path+=`M${x+4} ${y+4}h1v1h-1z`;
       qrSVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Scan to open your contact link" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="white"/><path d="${path}" fill="black"/></svg>`;
     }catch{qrUrl='';$('urlError').hidden=false;$('urlError').textContent='This link is too long for a QR code. Try a shorter destination.';}}
-    $('miniQr').innerHTML=qrSVG;$('qrLarge').innerHTML=qrSVG;$('qrLarge').hidden=!qrSVG;
+    $('miniQr').innerHTML=qrSVG;$('miniQr').hidden=!qrSVG;$('backQrEmpty').hidden=!!qrSVG;$('qrLarge').innerHTML=qrSVG;$('qrLarge').hidden=!qrSVG;
     $('backHint').textContent=qrUrl?'Scan to connect, or tap Show QR.':'Add your link in Customize to create your QR code.';
     $('qrDestination').textContent=qrUrl;$('qrDestination').hidden=!qrUrl;$('qrEmpty').hidden=!!qrUrl;$('qrCustomize').hidden=!!qrUrl;$('copyBtn').hidden=!qrUrl;
   }
@@ -51,7 +51,7 @@
     $('shineValue').value=state.shine+'%';$('sensitivityValue').value=state.sensitivity<60?'Subtle':state.sensitivity>110?'Expressive':'Balanced';
     document.querySelectorAll('[data-finish]').forEach(b=>{const selected=b.dataset.finish===state.finish;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
     $('uploadTitle').textContent=state.front?'Replace front image':'Choose front image';
-    $('backUploadLabel').textContent=state.back?'Replace back image':'Add back image';$('removeBackBtn').hidden=!state.back;
+    $('backUploadLabel').textContent=state.back?'Replace back background':'Add back background';$('removeBackBtn').hidden=!state.back;
     $('overlay').disabled=!state.front;$('overlayHint').hidden=!!state.front;
     $('shine').disabled=state.finish==='matte';$('shineControl').classList.toggle('disabled',state.finish==='matte');
     drawQR(state.url);fitCard();
@@ -61,7 +61,7 @@
     const maxWidth=presenting?(ratio>1?650:400):(ratio>1?450:mobile.matches?285:325);
     const width=Math.max(1,Math.min(stage.clientHeight*.84*ratio,stage.clientWidth*.84,maxWidth));
     cardWidth=width;cardRatio=ratio;stageWidth=stage.clientWidth;stageHeight=stage.clientHeight;
-    card.style.width=width+'px';card.style.setProperty('--card-width',width+'px');wake();
+    card.style.width=width+'px';card.style.setProperty('--card-width',width+'px');card.style.setProperty('--back-qr-size',Math.min(width*.56,width/ratio*.56,220)+'px');wake();
   }
   function setEditor(open,moveFocus=false){
     const modal=open&&mobile.matches,editor=$('editor');
