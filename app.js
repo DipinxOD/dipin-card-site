@@ -8,6 +8,8 @@
   let sensorOn=false, sensorWaiting=false, sensorTimer, neutral=null, latestQ=null, lastSensorAt=0, dragging=false, activePointer=null;
   let target={x:0,y:0,z:0}, position={x:0,y:0,z:0}, velocity={x:0,y:0,z:0}, lastFrame=0, animation=0, presenting=false;
   let steering=false, cardWidth=280, cardRatio=2/3, stageWidth=1, stageHeight=1;
+  let turnScale=1;
+  const turn={from:0,to:0,started:0,scaleFrom:1};
 
   function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4200);}
   function storageStatus(ok){saved=ok;$('saveStatus').classList.toggle('unsaved',!ok);$('saveStatus').textContent=ok?'Saved on this device':'Not saved · export a backup';$('saveStatus').prepend(document.createElement('i'));}
@@ -104,7 +106,7 @@
   function multiply(a,b){return [a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]];}
   function quaternion(e){const r=Math.PI/360,a=(e.alpha||0)*r,b=e.beta*r,g=e.gamma*r;return multiply(multiply([Math.cos(a),0,0,Math.sin(a)],[Math.cos(b),Math.sin(b),0,0]),[Math.cos(g),0,Math.sin(g),0]);}
   function orientation(e){if(!sensorOn||e.beta==null||e.gamma==null||!Number.isFinite(e.beta)||!Number.isFinite(e.gamma))return;latestQ=quaternion(e);lastSensorAt=performance.now();if(!neutral)neutral=latestQ.slice();
-    if(sensorWaiting){sensorWaiting=false;clearTimeout(sensorTimer);$('motionBtnLabel').textContent='Disable tilt';$('motionBtn').setAttribute('aria-label','Disable phone tilt');$('motionBtn').disabled=false;motionStatus('Phone tilt is on.',true);if(reduced.matches)toast('Phone tilt enabled. You can turn it off anytime.');}
+    if(sensorWaiting){sensorWaiting=false;clearTimeout(sensorTimer);$('motionBtnLabel').textContent='Disable tilt';$('motionBtn').setAttribute('aria-label','Disable phone tilt');$('motionBtn').disabled=false;motionStatus('Phone tilt is on.',true);}
     if(dragging)return;const rel=multiply([neutral[0],-neutral[1],-neutral[2],-neutral[3]],latestQ),[w,x,y,z]=rel;
     const pitch=Math.atan2(2*(w*x+y*z),1-2*(x*x+y*y))*180/Math.PI,yaw=Math.asin(Math.max(-1,Math.min(1,2*(w*y-z*x))))*180/Math.PI;
     const angle=((screen.orientation&&screen.orientation.angle)||0)*Math.PI/180,gain=state.sensitivity/100;
@@ -121,11 +123,12 @@
   function stopSensor(message='Drag the card to preview.'){sensorOn=false;sensorWaiting=false;clearTimeout(sensorTimer);window.removeEventListener('deviceorientation',orientation);neutral=null;latestQ=null;lastSensorAt=0;$('motionBtnLabel').textContent='Enable tilt';$('motionBtn').setAttribute('aria-label','Enable phone tilt');$('motionBtn').disabled=false;$('motionBtn').setAttribute('aria-pressed','false');motionStatus(message);target={x:0,y:0,z:0};steering=false;wake();}
   function motionNotice(message){$('motionNoticeText').textContent=message;$('motionNotice').hidden=false;}
   $('dismissMotionNotice').onclick=()=>{$('motionNotice').hidden=true;};
-  $('motionBtn').onclick=async()=>{
+  async function startSensor({automatic=false}={}){
     $('motionNotice').hidden=true;
-    if(sensorOn){stopSensor();return;}
-    if(!window.isSecureContext){motionStatus('Phone tilt needs HTTPS.');motionNotice('Phone tilt needs a secure HTTPS address. You can still drag the card while testing on your local network.');return;}
-    if(!('DeviceOrientationEvent'in window)){motionStatus('Drag the card to preview.');motionNotice('Motion sensors aren’t available in this browser. You can still drag the card.');return;}
+    if(sensorOn)return;
+    if(!window.isSecureContext){motionStatus('Phone tilt needs HTTPS.');if(!automatic)motionNotice('Phone tilt needs a secure HTTPS address. You can still drag the card while testing on your local network.');return;}
+    if(!('DeviceOrientationEvent'in window)){motionStatus('Drag the card to preview.');if(!automatic)motionNotice('Motion sensors aren’t available in this browser. You can still drag the card.');return;}
+    if(automatic&&typeof DeviceOrientationEvent.requestPermission==='function'){motionStatus('Tap Enable tilt to allow motion access.');return;}
     try{
       if(typeof DeviceOrientationEvent.requestPermission==='function'){
         const permission=await DeviceOrientationEvent.requestPermission();
@@ -134,9 +137,10 @@
       sensorOn=true;sensorWaiting=true;neutral=null;lastSensorAt=0;
       $('motionBtnLabel').textContent='Connecting…';$('motionBtn').setAttribute('aria-label','Cancel phone tilt connection');$('motionBtn').setAttribute('aria-pressed','true');motionStatus('Hold your phone comfortably.');
       window.addEventListener('deviceorientation',orientation);
-      sensorTimer=setTimeout(()=>{if(sensorWaiting){stopSensor('No motion data received.');motionNotice('Open the HTTPS page directly in Chrome and check its Motion sensors permission. You can still drag the card.');}},3500);
-    }catch(e){stopSensor();motionNotice(e.message||'Could not enable motion. Check your browser permissions and try again.');}
-  };
+      sensorTimer=setTimeout(()=>{if(sensorWaiting){stopSensor('No motion data received · tap Enable tilt to retry.');if(!automatic)motionNotice('Open the HTTPS page directly in Chrome and check its Motion sensors permission. You can still drag the card.');}},3500);
+    }catch(e){stopSensor();if(!automatic)motionNotice(e.message||'Could not enable motion. Check your browser permissions and try again.');}
+  }
+  $('motionBtn').onclick=()=>sensorOn?stopSensor():startSensor();
   $('recenterBtn').onclick=()=>{if(sensorOn&&latestQ){neutral=latestQ.slice();target={x:0,y:0,z:0};steering=false;toast('Centered at your current holding angle.');}else{target={x:0,y:0,z:0};steering=false;toast('Card centered.');}wake();};
   if(screen.orientation)screen.orientation.addEventListener('change',()=>{neutral=null;target={x:0,y:0,z:0};steering=false;wake();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animation);animation=0;lastFrame=0;}else{neutral=null;lastSensorAt=performance.now();wake();}});
@@ -149,11 +153,28 @@
   stage.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&!dragging&&!sensorOn&&!reduced.matches)pointerTarget(e);});
   stage.addEventListener('pointerleave',()=>{if(!sensorOn&&!dragging){target={x:0,y:0,z:0};steering=false;wake();}});
   function wake(){if(!animation&&!document.hidden)animation=requestAnimationFrame(frame);}
+  function smoothStep(t){return t*t*t*(t*(t*6-15)+10);}
+  function animateTurn(now){
+    if(target.z!==turn.to){turn.from=position.z;turn.to=target.z;turn.started=now;turn.scaleFrom=turnScale;}
+    if(position.z===turn.to&&turnScale===1)return false;
+    // A deliberate 900 ms turn with a gentle start and a clean, exact finish.
+    const progress=reduced.matches?1:clamp((now-turn.started)/900,0,1);
+    position.z=turn.from+(turn.to-turn.from)*smoothStep(progress);
+    // Pull back once to clear every angle, then settle back at full size.
+    // This avoids the repeated size changes of fitting each rotation frame.
+    const diagonal=Math.hypot(cardWidth,cardWidth/cardRatio);
+    const clearance=Math.min(1,stageWidth*.9/diagonal,stageHeight*.9/diagonal);
+    if(progress<.2)turnScale=turn.scaleFrom+(clearance-turn.scaleFrom)*smoothStep(progress/.2);
+    else if(progress>.8)turnScale=clearance+(1-clearance)*smoothStep((progress-.8)/.2);
+    else turnScale=clearance;
+    if(progress===1){position.z=turn.to;turnScale=1;}
+    return progress<1;
+  }
   function frame(now){animation=0;const dt=Math.min((now-(lastFrame||now-16))/1000,1/30);lastFrame=now;
     if(sensorOn&&!sensorWaiting&&lastSensorAt&&now-lastSensorAt>3500){motionStatus('Waiting for motion data…');target={x:0,y:0,z:0};steering=false;}else if(sensorOn&&!sensorWaiting)motionStatus('Phone tilt is on.',true);
-    let moving=false;for(const axis of ['x','y','z']){const force=(target[axis]-position[axis])*150-velocity[axis]*23;velocity[axis]+=force*dt;position[axis]+=velocity[axis]*dt;if(Math.abs(target[axis]-position[axis])>.005||Math.abs(velocity[axis])>.01)moving=true;else{position[axis]=target[axis];velocity[axis]=0;}}
+    let moving=animateTurn(now);for(const axis of ['x','y']){const force=(target[axis]-position[axis])*150-velocity[axis]*23;velocity[axis]+=force*dt;position[axis]+=velocity[axis]*dt;if(Math.abs(target[axis]-position[axis])>.005||Math.abs(velocity[axis])>.01)moving=true;else{position[axis]=target[axis];velocity[axis]=0;}}
     const turn=position.z*Math.PI/180,c=Math.abs(Math.cos(turn)),s=Math.abs(Math.sin(turn)),height=cardWidth/cardRatio;
-    const scale=Math.min(1,stageWidth*.9/(cardWidth*c+height*s),stageHeight*.9/(cardWidth*s+height*c));
+    const scale=Math.min(turnScale,stageWidth*.9/(cardWidth*c+height*s),stageHeight*.9/(cardWidth*s+height*c));
     card.style.setProperty('--turn-scale',String(Math.max(.01,scale)));card.style.setProperty('--rz',position.z.toFixed(3)+'deg');
     card.style.setProperty('--rx',position.x.toFixed(3)+'deg');card.style.setProperty('--ry',position.y.toFixed(3)+'deg');card.style.setProperty('--lx',(50+position.y*2.1).toFixed(2)+'%');card.style.setProperty('--ly',(30-position.x*2.2).toFixed(2)+'%');$('floorShadow').style.transform=`translate(${position.y*.9}px,${Math.abs(position.x)*.15}px) scale(${1+Math.abs(position.y)/130})`;
     if(moving||sensorOn)wake();else lastFrame=0;
@@ -233,7 +254,7 @@
   }
   $('importFile').onchange=async e=>{const file=e.target.files[0];try{if(!file)return;if(file.size>20*1024*1024)throw Error('Backup must be under 20 MB.');const next=validateBackup(JSON.parse(await file.text()));for(const side of ['front','back'])if(next[side]){const img=await readImage(await(await fetch(next[side])).blob());next[side]=img.data;if(side==='front')next.imageRatio=img.ratio;}
       state=next;applyState();scheduleSave();toast('Your setup has been restored.');}catch(err){toast(err instanceof SyntaxError?'This file is not a valid JSON backup.':err.message||'Could not restore this backup.');}finally{e.target.value='';}};
-  async function init(){applyState();try{db=await openDB();const stored=await dbGet();if(stored){const next=validateBackup({app:'prism-pocket-card',...stored});next.imageRatio=Number.isFinite(stored.imageRatio)&&stored.imageRatio>0?stored.imageRatio:2/3;state=next;applyState();}storageStatus(true);}catch{storageStatus(false);toast('Local saving is unavailable here. Export a backup before closing.');}if(reduced.matches)motionStatus('Motion is optional · drag to explore');}
+  async function init(){applyState();try{db=await openDB();const stored=await dbGet();if(stored){const next=validateBackup({app:'prism-pocket-card',...stored});next.imageRatio=Number.isFinite(stored.imageRatio)&&stored.imageRatio>0?stored.imageRatio:2/3;state=next;applyState();}storageStatus(true);}catch{storageStatus(false);toast('Local saving is unavailable here. Export a backup before closing.');}startSensor({automatic:true});}
   window.addEventListener('pagehide',()=>{if(db){clearTimeout(saveTimer);dbPut({...state}).catch(()=>{});}});
   init();
 })();
